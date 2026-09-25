@@ -79,6 +79,43 @@ class ShoeRepository(
 
     suspend fun getSizesForShoe(shoeId: Long): List<ShoeSize> = dao.getSizesForShoe(shoeId)
 
+    // --- Manage shoes (list / edit / delete) ---
+
+    fun observeAllShoes() = dao.observeAllShoes()
+
+    /**
+     * Edits an existing shoe's price/details and replaces its size/stock rows.
+     * Reference photos and their embeddings are left untouched — if the shoe's
+     * appearance genuinely changed, re-add it instead so the photos stay accurate.
+     */
+    suspend fun updateShoe(
+        shoeId: Long,
+        name: String,
+        category: String,
+        costPrice: Int,
+        sellingPrice: Int,
+        lowestPrice: Int,
+        sizes: List<Pair<String, Int>>
+    ) {
+        val existing = dao.getShoe(shoeId) ?: return
+        dao.updateShoe(
+            existing.copy(
+                name = name,
+                category = category,
+                costPrice = costPrice,
+                sellingPrice = sellingPrice,
+                lowestPrice = lowestPrice
+            )
+        )
+        dao.deleteSizesForShoe(shoeId)
+        sizes.forEach { (size, quantity) ->
+            dao.insertSize(ShoeSize(shoeId = shoeId, size = size, quantity = quantity))
+        }
+    }
+
+    /** Deleting a shoe cascades to its photos, sizes and sale history (see ShoeDao). */
+    suspend fun deleteShoe(shoeId: Long) = dao.deleteShoeById(shoeId)
+
     // --- Sales / receipts ---
 
     suspend fun recordSale(

@@ -6,7 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,14 +24,19 @@ import com.agkomputech.shoeshop.util.captureToAppStorage
 import kotlinx.coroutines.launch
 
 @Composable
-fun ScanScreen(viewModel: ScanViewModel, onAddNewShoe: () -> Unit) {
+fun ScanScreen(viewModel: ScanViewModel, onAddNewShoe: () -> Unit, onManageShoes: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var isCapturing by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -36,7 +44,10 @@ fun ScanScreen(viewModel: ScanViewModel, onAddNewShoe: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Shoe Shop", style = MaterialTheme.typography.titleLarge)
-            TextButton(onClick = onAddNewShoe) { Text("+ Add shoe") }
+            Row {
+                TextButton(onClick = onManageShoes) { Text("Manage") }
+                TextButton(onClick = onAddNewShoe) { Text("+ Add shoe") }
+            }
         }
         Spacer(modifier = Modifier.height(12.dp))
 
