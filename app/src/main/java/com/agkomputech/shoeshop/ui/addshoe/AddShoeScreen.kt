@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,7 +27,7 @@ private fun PhotoAngle.label() = when (this) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddShoeScreen(viewModel: AddShoeViewModel, onSaved: () -> Unit, onCancel: () -> Unit) {
+fun AddShoeScreen(viewModel: AddShoeViewModel, onSaved: () -> Unit, onCancel: () -> Unit) {    
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
