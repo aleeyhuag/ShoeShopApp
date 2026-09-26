@@ -31,17 +31,24 @@ import com.agkomputech.shoeshop.ui.addshoe.AddShoeScreen
 import com.agkomputech.shoeshop.ui.addshoe.AddShoeViewModel
 import com.agkomputech.shoeshop.ui.manage.EditShoeScreen
 import com.agkomputech.shoeshop.ui.manage.EditShoeViewModel
-import com.agkomputech.shoeshop.ui.manage.ManageShoesScreen
-import com.agkomputech.shoeshop.ui.manage.ManageShoesViewModel
+import com.agkomputech.shoeshop.ui.manage.ShoeDetailScreen
+import com.agkomputech.shoeshop.ui.manage.ShoeDetailViewModel
+import com.agkomputech.shoeshop.ui.manage.ShoeListScreen
+import com.agkomputech.shoeshop.ui.manage.ShoeListViewModel
 import com.agkomputech.shoeshop.ui.scan.ScanScreen
 import com.agkomputech.shoeshop.ui.scan.ScanViewModel
+import com.agkomputech.shoeshop.ui.stock.StockValueScreen
+import com.agkomputech.shoeshop.ui.stock.StockValueViewModel
 import com.agkomputech.shoeshop.ui.theme.ShoeShopTheme
 
 private object Routes {
     const val SCAN = "scan"
     const val ADD_SHOE = "add_shoe"
-    const val MANAGE_SHOES = "manage_shoes"
+    const val SHOE_LIST = "shoe_list"
+    const val STOCK_VALUE = "stock_value"
+    const val SHOE_DETAIL = "shoe_detail/{shoeId}"
     const val EDIT_SHOE = "edit_shoe/{shoeId}"
+    fun shoeDetail(shoeId: Long) = "shoe_detail/$shoeId"
     fun editShoe(shoeId: Long) = "edit_shoe/$shoeId"
 }
 
@@ -84,7 +91,8 @@ class MainActivity : ComponentActivity() {
                                 ScanScreen(
                                     viewModel = scanViewModel,
                                     onAddNewShoe = { navController.navigate(Routes.ADD_SHOE) },
-                                    onManageShoes = { navController.navigate(Routes.MANAGE_SHOES) }
+                                    onManageShoes = { navController.navigate(Routes.SHOE_LIST) },
+                                    onStockValue = { navController.navigate(Routes.STOCK_VALUE) }
                                 )
                             }
                             composable(Routes.ADD_SHOE) {
@@ -97,13 +105,28 @@ class MainActivity : ComponentActivity() {
                                     onCancel = { navController.popBackStack() }
                                 )
                             }
-                            composable(Routes.MANAGE_SHOES) {
-                                val manageViewModel: ManageShoesViewModel = viewModel {
-                                    ManageShoesViewModel((application as ShoeShopApplication).repository)
+                            composable(Routes.SHOE_LIST) {
+                                val listViewModel: ShoeListViewModel = viewModel {
+                                    ShoeListViewModel((application as ShoeShopApplication).repository)
                                 }
-                                ManageShoesScreen(
-                                    viewModel = manageViewModel,
-                                    onEditShoe = { shoeId -> navController.navigate(Routes.editShoe(shoeId)) },
+                                ShoeListScreen(
+                                    viewModel = listViewModel,
+                                    onOpenShoe = { shoeId -> navController.navigate(Routes.shoeDetail(shoeId)) },
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+                            composable(
+                                route = Routes.SHOE_DETAIL,
+                                arguments = listOf(navArgument("shoeId") { type = NavType.LongType })
+                            ) { backStackEntry ->
+                                val shoeId = backStackEntry.arguments?.getLong("shoeId") ?: return@composable
+                                val detailViewModel: ShoeDetailViewModel = viewModel {
+                                    ShoeDetailViewModel((application as ShoeShopApplication).repository, shoeId)
+                                }
+                                ShoeDetailScreen(
+                                    viewModel = detailViewModel,
+                                    onEdit = { id -> navController.navigate(Routes.editShoe(id)) },
+                                    onDeleted = { navController.popBackStack() },
                                     onBack = { navController.popBackStack() }
                                 )
                             }
@@ -119,6 +142,15 @@ class MainActivity : ComponentActivity() {
                                     viewModel = editViewModel,
                                     onSaved = { navController.popBackStack() },
                                     onCancel = { navController.popBackStack() }
+                                )
+                            }
+                            composable(Routes.STOCK_VALUE) {
+                                val stockViewModel: StockValueViewModel = viewModel {
+                                    StockValueViewModel((application as ShoeShopApplication).repository)
+                                }
+                                StockValueScreen(
+                                    viewModel = stockViewModel,
+                                    onBack = { navController.popBackStack() }
                                 )
                             }
                         }

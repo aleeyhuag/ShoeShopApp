@@ -79,9 +79,23 @@ class ShoeRepository(
 
     suspend fun getSizesForShoe(shoeId: Long): List<ShoeSize> = dao.getSizesForShoe(shoeId)
 
+    suspend fun getPhotosForShoe(shoeId: Long): List<ShoePhoto> = dao.getPhotosForShoe(shoeId)
+
     // --- Manage shoes (list / edit / delete) ---
 
     fun observeAllShoes() = dao.observeAllShoes()
+
+    /**
+     * One representative photo path per shoe, for list-row thumbnails — prefers the
+     * TOP angle (the "natural glance" shot) and falls back to whichever photo exists.
+     * Single query for all shoes rather than one query per row.
+     */
+    suspend fun getThumbnailPathsByShoe(): Map<Long, String> {
+        val allPhotos = dao.getAllPhotos()
+        return allPhotos.groupBy { it.shoeId }.mapValues { (_, photos) ->
+            (photos.firstOrNull { it.angle == PhotoAngle.TOP } ?: photos.first()).imagePath
+        }
+    }
 
     /**
      * Edits an existing shoe's price/details and replaces its size/stock rows.
@@ -115,6 +129,45 @@ class ShoeRepository(
 
     /** Deleting a shoe cascades to its photos, sizes and sale history (see ShoeDao). */
     suspend fun deleteShoe(shoeId: Long) = dao.deleteShoeById(shoeId)
+
+    // --- Stock value (replaces the manual monthly cost-price × quantity count) ---
+
+    data class StockValueRow(
+        val shoeId: Long,
+        val name: String,
+        val tagId: String,
+        val costPrice: Int,
+        val totalQuantity: Int,
+        val value: Int   // costPrice * totalQuantity
+    )
+
+    data class StockValueReport(val rows: List<StockValueRow>, val totalValue: Int)
+
+    /**
+     * Total stock value at COST price (what you paid), matching how the manual
+     * monthly count was done: cost price × quantity per shoe, summed across all
+     * shoes and all their sizes. Two one-shot queries, combined here rather than
+     * with per-shoe queries, so this stays fast even with a few hundred shoes.
+     */
+    suspend fun computeStockValueReport(): StockValueReport {
+        val shoes = dao.getAllShoesOnce()
+        val sizes = dao.getAllSizesOnce()
+        val quantityByShoe = sizes.groupBy { it.shoeId }.mapValues { (_, s) -> s.sumOf { it.quantity } }
+
+        val rows = shoes.map { shoe ->
+            val qty = quantityByShoe[shoe.id] ?: 0
+            StockValueRow(
+                shoeId = shoe.id,
+                name = shoe.name,
+                tagId = shoe.tagId,
+                costPrice = shoe.costPrice,
+                totalQuantity = qty,
+                value = shoe.costPrice * qty
+            )
+        }.sortedByDescending { it.value }
+
+        return StockValueReport(rows = rows, totalValue = rows.sumOf { it.value })
+    }
 
     // --- Sales / receipts ---
 

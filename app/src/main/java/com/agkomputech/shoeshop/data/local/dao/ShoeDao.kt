@@ -29,6 +29,10 @@ interface ShoeDao {
     @Query("SELECT * FROM shoes ORDER BY dateAddedEpochMillis DESC")
     fun observeAllShoes(): Flow<List<Shoe>>
 
+    // One-shot version for computations (stock value) that don't need live updates.
+    @Query("SELECT * FROM shoes")
+    suspend fun getAllShoesOnce(): List<Shoe>
+
     @Query("SELECT * FROM shoes WHERE id = :shoeId")
     suspend fun getShoe(shoeId: Long): Shoe?
 
@@ -53,6 +57,11 @@ interface ShoeDao {
 
     @Query("SELECT * FROM shoe_sizes WHERE shoeId = :shoeId")
     suspend fun getSizesForShoe(shoeId: Long): List<ShoeSize>
+
+    // One-shot: every size row across every shoe, used to compute total stock value
+    // (cost price × quantity, summed) without an N+1 query per shoe.
+    @Query("SELECT * FROM shoe_sizes")
+    suspend fun getAllSizesOnce(): List<ShoeSize>
 
     // Editing sizes is done as "wipe and re-insert" from ShoeRepository.updateShoe(),
     // simpler and safer than diffing add/remove for a handful of size rows.

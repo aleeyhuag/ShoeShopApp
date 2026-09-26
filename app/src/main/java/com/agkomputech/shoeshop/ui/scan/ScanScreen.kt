@@ -24,7 +24,12 @@ import com.agkomputech.shoeshop.util.captureToAppStorage
 import kotlinx.coroutines.launch
 
 @Composable
-fun ScanScreen(viewModel: ScanViewModel, onAddNewShoe: () -> Unit, onManageShoes: () -> Unit) {
+fun ScanScreen(
+    viewModel: ScanViewModel,
+    onAddNewShoe: () -> Unit,
+    onManageShoes: () -> Unit,
+    onStockValue: () -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -44,10 +49,12 @@ fun ScanScreen(viewModel: ScanViewModel, onAddNewShoe: () -> Unit, onManageShoes
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Shoe Shop", style = MaterialTheme.typography.titleLarge)
-            Row {
-                TextButton(onClick = onManageShoes) { Text("Manage") }
-                TextButton(onClick = onAddNewShoe) { Text("+ Add shoe") }
-            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            TextButton(onClick = onManageShoes) { Text("Shoes") }
+            TextButton(onClick = onStockValue) { Text("Stock value") }
+            TextButton(onClick = onAddNewShoe) { Text("+ Add") }
         }
         Spacer(modifier = Modifier.height(12.dp))
 
